@@ -15,18 +15,14 @@ impl RagEngine {
         RagEngine { qdrant, gemini }
     }
 
+
+    /// Check if the collection exists
+    pub async fn collection_exists(&self, file_name: &str) -> Result<bool> {
+        self.qdrant.collection_exists(file_name).await
+    }
+
     /// Process a file: chunk it, generate embeddings, and store in Qdrant
     pub async fn process_file(&self, content: String, file_name: &str) -> Result<()> {
-        // Check if collection already exists
-        if self.qdrant.collection_exists(file_name).await? {
-            println!(
-                "Collection for {} already exists, skipping processing.",
-                file_name
-            );
-
-            return Ok(());
-        }
-
         // Create a new collection
         self.qdrant.create_collection(file_name).await?;
 
