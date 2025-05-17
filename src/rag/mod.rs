@@ -15,7 +15,6 @@ impl RagEngine {
         RagEngine { qdrant, gemini }
     }
 
-
     /// Check if the collection exists
     pub async fn collection_exists(&self, file_name: &str) -> Result<bool> {
         self.qdrant.collection_exists(file_name).await

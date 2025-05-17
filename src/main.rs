@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
 
     // Parse and validate command line arguments
     let args = Args::parse();
-    let file_path = args.file_path;  // Path to the document to process
+    let file_path = args.file_path; // Path to the document to process
 
     info!("Processing file: {}", file_path);
 
