@@ -14,6 +14,7 @@ A Rust-based Retrieval-Augmented Generation (RAG) system using Gemini embeddings
 - Rust (with Cargo)
 - Qdrant instance (cloud or local)
 - Gemini API key
+- [just](https://github.com/casey/just) (for development tasks, optional)
 
 ## Setup
 
@@ -33,6 +34,24 @@ A Rust-based Retrieval-Augmented Generation (RAG) system using Gemini embeddings
 # When the app is running, type your questions at the prompt
 # Type 'exit' to quit
 ```
+
+## Development
+
+This project uses [just](https://github.com/casey/just) for running common development tasks. Install it with:
+
+```bash
+cargo install just
+```
+
+Available commands:
+
+- `just` - Show available commands
+- `just format` - Format code using rustfmt
+- `just lint` - Lint code using clippy
+- `just build` - Build the project in release mode
+- `just test` - Run tests
+- `just run` - Run the application
+- `just clean` - Clean build artifacts
 
 ## Environment Variables
 
