@@ -4,16 +4,16 @@ use dotenv::dotenv;
 use log::{error, info};
 use std::path::Path;
 
-use gemini_rag::chunking;
 use gemini_rag::database::{QdrantClient, QdrantConfig};
-use gemini_rag::embeddings::{GeminiClient, GeminiConfig};
+use gemini_rag::document::Document;
+use gemini_rag::gemini::{GeminiClient, GeminiConfig};
 use gemini_rag::rag::RagEngine;
 
 /// A RAG (Retrieval-Augmented Generation) application using Gemini embeddings and Qdrant
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Path to the text file to process
+    /// Path to the document to process (supports text and PDF)
     #[arg(index = 1)]
     file_path: String,
 }
@@ -37,9 +37,6 @@ async fn main() -> Result<()> {
         return Err(anyhow::anyhow!("File not found"));
     }
 
-    // Use filename as collection name in Qdrant
-    let file_name = path.file_name().context("Invalid file path")?;
-
     // Load configuration from environment
     let qdrant_config = QdrantConfig::from_env().context("Missing QDRANT_URL")?;
     let gemini_config = GeminiConfig::from_env().context("Missing GEMINI_API_KEY")?;
@@ -52,24 +49,26 @@ async fn main() -> Result<()> {
     // Initialize RAG engine
     let rag_engine = RagEngine::new(qdrant, gemini);
 
-    // Convert filename to string for processing
-    let file_name = file_name.to_str().context("Invalid file name")?;
+    // Process the document (text or PDF)
+    let document = Document::from_file(&file_path).context("Failed to process document")?;
+    let document_id = document.document_id.clone();
+
+    info!("Document type: {}", document.mime_type);
 
     // Only process file if collection doesn't exist
-    if rag_engine.collection_exists(file_name).await? {
-        info!("Using existing collection: {}", file_name);
+    if rag_engine.collection_exists(&document_id).await? {
+        info!("Using existing collection: {}", document_id);
     } else {
         // Process and index the document
-        let content = chunking::read_file(&file_path).context("Failed to read file")?;
         rag_engine
-            .process_file(content, file_name)
+            .process_file(document.content, &document_id)
             .await
             .context("Failed to process file")?;
     }
 
     // Enter interactive Q&A loop
     rag_engine
-        .run_query_loop(file_name)
+        .run_query_loop(&document_id)
         .await
         .context("Error in query loop")?;
 

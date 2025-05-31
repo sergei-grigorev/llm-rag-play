@@ -1,16 +1,19 @@
 # Gemini RAG
 
-A high-performance Rust-based Retrieval-Augmented Generation (RAG) system leveraging Google's Gemini API for embeddings and text generation, with Qdrant vector database for efficient semantic search. The system implements advanced RAG patterns including contextual retrieval for improved accuracy and memory-optimized document handling.
+A high-performance Rust-based Retrieval-Augmented Generation (RAG) system leveraging Google's Gemini API for embeddings and text generation, with Qdrant vector database for efficient semantic search. The system implements advanced RAG patterns including contextual retrieval for improved accuracy and memory-optimized document handling, with support for both text and PDF documents.
 
 ## Features
 
-- Process text files into optimized semantic chunks with configurable overlap
-- Generate embeddings using Google's Gemini API
+- Process text and PDF files into optimized semantic chunks with configurable overlap
+- Generate embeddings using Google's Gemini API (supports multiple models)
 - Efficient vector storage and retrieval with Qdrant
-- Contextual retrieval for improved answer quality
+- Contextual retrieval with automatic context generation
 - Memory-optimized architecture with document reference handling
 - Support for vector similarity search
 - Configurable chunking and retrieval parameters
+- Progress tracking during document processing
+- PDF text extraction with whitespace normalization
+- Automatic document type detection via MIME types
 
 ## Prerequisites
 
@@ -33,6 +36,9 @@ A high-performance Rust-based Retrieval-Augmented Generation (RAG) system levera
 ```bash
 # Process a document and start answering questions
 ./target/release/gemini-rag /path/to/your/document.txt
+
+# Process a PDF document
+./target/release/gemini-rag /path/to/your/document.pdf
 
 # When the app is running, type your questions at the prompt
 # Type 'exit' to quit
@@ -68,9 +74,11 @@ Available commands:
 ## How it Works
 
 1. **Document Processing**
+   - Automatically detects document type (text/plain, application/pdf) via MIME type checking
    - Input text is split into chunks of approximately 500 tokens with 50-token overlap
    - Each chunk maintains metadata including document ID and position in the source document
-   - Memory-optimized storage avoids storing duplicate copies of source documents
+   - Memory-optimized storage uses document references to avoid duplication
+   - Progress tracking shows real-time processing status
 
 2. **Embedding Generation**
    - Each chunk is enhanced with contextual information about its position and content
@@ -85,8 +93,10 @@ Available commands:
 4. **Question Answering**
    - User questions are converted to embeddings using the same Gemini model
    - The system retrieves the most relevant chunks using vector similarity search
+   - Contextual information is dynamically generated for retrieved chunks
    - Retrieved chunks are combined to form a comprehensive context
    - Gemini generates accurate, source-grounded answers based on the retrieved context
+   - Multiple model support (Gemini 2.5 Flash, Gemini 2.0 Flash-Lite) for different tasks
 
 5. **Memory Optimization**
    - TextChunk structure stores metadata (document ID, position) instead of duplicating the entire document
@@ -102,10 +112,12 @@ Available commands:
 
 ## Recent Improvements
 
-- **Memory Optimization**: Reduced memory usage through reference-based document storage
-- **Contextual Retrieval**: Improved answer quality with contextual embeddings
-- **Context Generation**: Added automatic context generation for chunks to improve retrieval
-- **Enhanced Documentation**: Added comprehensive [architecture documentation](./architecture.md) and usage examples
+- **Memory Optimization**: Reference-based document storage to minimize memory footprint
+- **Contextual Retrieval**: Enhanced with automatic context generation for improved accuracy
+- **Multi-Model Support**: Added support for different Gemini models (2.5 Flash, 2.0 Flash-Lite)
+- **Progress Tracking**: Real-time feedback during document processing
+- **Document Type Detection**: Automatic MIME type detection for different file formats
+- **Enhanced Error Handling**: Improved error messages and recovery mechanisms
 
 ### Document Processing Flow
 

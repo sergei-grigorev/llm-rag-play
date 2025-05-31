@@ -1,6 +1,7 @@
 use crate::context::ContextGenerator;
 use crate::database::QdrantClient;
-use crate::embeddings::GeminiClient;
+use crate::embeddings::ContextualEmbeddingExt;
+use crate::gemini::GeminiClient;
 use anyhow::Result;
 use log::info;
 use std::io::{self, Write};
@@ -63,7 +64,11 @@ impl RagEngine {
         let mut contextualized_chunks_for_storage = Vec::new();
         let mut embeddings = Vec::new();
 
-        for contextual_embedding in contextual_embeddings {
+        // Add counter for logging progress
+        let total_chunks = contextual_embeddings.len();
+        info!("Processing {} chunks with embeddings...", total_chunks);
+
+        for (i, contextual_embedding) in contextual_embeddings.into_iter().enumerate() {
             // Create a new TextChunk with contextualized text but same metadata
             let original_chunk = contextual_embedding.contextualized_chunk.original_chunk;
             let contextualized_text_chunk = crate::chunking::TextChunk {
@@ -77,6 +82,24 @@ impl RagEngine {
 
             contextualized_chunks_for_storage.push(contextualized_text_chunk);
             embeddings.push(contextual_embedding.embedding);
+
+            // Log progress after every 5th chunk
+            if (i + 1) % 5 == 0 {
+                info!(
+                    "Progress: processed {}/{} chunks ({}%)",
+                    i + 1,
+                    total_chunks,
+                    ((i + 1) * 100) / total_chunks
+                );
+            }
+        }
+
+        // Log completion if total chunks is not a multiple of 5
+        if total_chunks % 5 != 0 {
+            info!(
+                "Progress: completed processing all {}/{} chunks (100%)",
+                total_chunks, total_chunks
+            );
         }
 
         // Store contextualized chunks in Qdrant

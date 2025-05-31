@@ -32,3 +32,9 @@ log = "0.4"
 
 # gRPC framework
 tonic = "0.12"
+
+# PDF extraction
+pdf-extract = "0.7"
+
+# MIME type detection
+mime_guess = "2.0"

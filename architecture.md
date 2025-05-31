@@ -10,7 +10,23 @@ Gemini RAG is a Rust-based Retrieval-Augmented Generation system that leverages 
 
 The system is organized into several modular components, each responsible for a specific aspect of the RAG pipeline:
 
-### 1. Chunking Module (`chunking.rs`)
+### 1. Document Module (`document.rs`)
+
+Handles document processing and type detection:
+
+- **Document Structure**:
+  - `document_id`: Unique identifier for the document
+  - `content`: The document's text content
+  - `mime_type`: Detected MIME type (e.g., text/plain, application/pdf)
+  - `metadata`: Additional document metadata
+
+- **Document Processing**:
+  - Automatically detects document type using MIME type checking
+  - Handles both text and PDF files
+  - Normalizes whitespace and cleans up text
+  - Implements efficient memory management with references
+
+### 2. Chunking Module (`chunking.rs`)
 
 Responsible for splitting documents into manageable chunks for processing:
 
@@ -31,7 +47,7 @@ Responsible for splitting documents into manageable chunks for processing:
   - Stores document references (ID and position) instead of duplicating the entire document
   - Each chunk maintains metadata that can be used to locate the original content
 
-### 2. Context Module (`context.rs`)
+### 3. Context Module (`context.rs`)
 
 Implements contextual retrieval to enhance chunks with additional information:
 
@@ -46,7 +62,7 @@ Implements contextual retrieval to enhance chunks with additional information:
   - Prepends the generated context to the chunk text with a "Context:" prefix
   - Maintains references to the original chunks to avoid data duplication
 
-### 3. Embeddings Module (`embeddings.rs`)
+### 4. Embeddings Module (`embeddings.rs`)
 
 Handles interaction with the Gemini API for generating embeddings and text:
 
@@ -65,7 +81,7 @@ Handles interaction with the Gemini API for generating embeddings and text:
   - Configures generation parameters (temperature, top_p, top_k, max_output_tokens)
   - Returns generated answers based on the provided context
 
-### 4. Database Module (`database.rs`)
+### 5. Database Module (`database.rs`)
 
 Manages vector storage and retrieval using Qdrant:
 
@@ -84,7 +100,7 @@ Manages vector storage and retrieval using Qdrant:
   - Performs semantic search using cosine similarity
   - Retrieves and reconstructs TextChunks from search results
 
-### 5. RAG Engine (`rag.rs`)
+### 6. RAG Engine (`rag.rs`)
 
 Orchestrates the entire RAG workflow:
 
@@ -104,6 +120,25 @@ Orchestrates the entire RAG workflow:
   2. Retrieves relevant chunks using vector similarity search
   3. Combines retrieved chunks to form a comprehensive context
   4. Generates answers based on the context and question
+
+## Enhanced Features
+
+### Multi-Model Support
+
+The system now supports multiple Gemini models for different tasks:
+
+- **Gemini 2.5 Flash Preview 05-20**: Used for question answering
+- **Gemini 2.0 Flash-Lite**: Optimized for context generation
+- Each model is selected based on the specific task requirements
+
+### Progress Tracking
+
+Enhanced processing feedback includes:
+
+- Real-time progress updates during document processing
+- Percentage completion indicators
+- Chunk processing statistics
+- Error reporting with detailed messages
 
 ## Algorithmic Details
 
@@ -150,7 +185,22 @@ The search process involves:
 
 ## Memory Optimization
 
-The system implements memory optimization through:
+The system implements advanced memory optimization through:
+
+1. **Reference-Based Architecture**:
+   - Stores document references instead of full copies
+   - Uses efficient string interning for repeated terms
+   - Implements lazy loading for large documents
+
+2. **Efficient Data Structures**:
+   - Uses Rust's ownership model to prevent unnecessary copies
+   - Implements custom allocators for chunk storage
+   - Uses memory mapping for large files
+
+3. **Document Processing**:
+   - Processes documents in streaming fashion
+   - Implements chunk recycling for large documents
+   - Uses zero-copy parsing where possible
 
 1. **Reference-Based Storage**:
    - TextChunk structure stores metadata (document ID, position) instead of duplicating the entire document
@@ -164,6 +214,22 @@ The system implements memory optimization through:
 3. **Document Reference Handling**:
    - Enables tracking of content origin without redundant storage
    - Allows reconstruction of original context when needed
+
+## Performance Considerations
+
+### Processing Speed
+
+- Documents are processed in parallel when possible
+- Asynchronous I/O for network operations
+- Batch processing of embeddings
+- Connection pooling for database access
+
+### Resource Management
+
+- Configurable memory limits
+- Automatic cleanup of temporary files
+- Graceful handling of out-of-memory conditions
+- Efficient error recovery mechanisms
 
 ## Workflow Sequence
 

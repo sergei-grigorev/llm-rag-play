@@ -1,7 +1,3 @@
-use anyhow::Result;
-use std::fs;
-use std::path::Path;
-
 /// Represents a text chunk with metadata
 #[derive(Debug, Clone)]
 pub struct TextChunk {
@@ -13,12 +9,6 @@ pub struct TextChunk {
     pub document_id: String,
     /// Starting position of this chunk in the original document
     pub start_position: usize,
-}
-
-/// Read content from a text file
-pub fn read_file<P: AsRef<Path>>(file_path: P) -> Result<String> {
-    let content = fs::read_to_string(file_path)?;
-    Ok(content)
 }
 
 /// Split text into chunks of approximately 500 tokens

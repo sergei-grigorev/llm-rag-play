@@ -1,5 +1,5 @@
 use crate::chunking::TextChunk;
-use crate::embeddings::Embedding;
+use crate::gemini::Embedding;
 use anyhow::{Context, Result};
 use qdrant_client::qdrant::UpsertPointsBuilder;
 use qdrant_client::qdrant::{CreateCollectionBuilder, Distance, PointStruct, Value, VectorParams};
