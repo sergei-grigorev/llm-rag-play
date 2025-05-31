@@ -1,8 +1,10 @@
+use crate::context::ContextualizedChunk;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::env;
 
 /// Configuration for Gemini API
+#[derive(Clone)]
 pub struct GeminiConfig {
     pub api_key: String,
     pub embeddings_url: String,
@@ -33,9 +35,17 @@ impl GeminiConfig {
 }
 
 /// Client for interacting with Gemini API
+#[derive(Clone)]
 pub struct GeminiClient {
     config: GeminiConfig,
     client: reqwest::Client,
+}
+
+/// Represents an embedding with its associated contextualized chunk
+#[derive(Debug, Clone)]
+pub struct ContextualEmbedding {
+    pub embedding: Embedding,
+    pub contextualized_chunk: ContextualizedChunk,
 }
 
 impl GeminiClient {
@@ -43,6 +53,37 @@ impl GeminiClient {
     pub fn new(config: GeminiConfig) -> Self {
         let client = reqwest::Client::new();
         GeminiClient { config, client }
+    }
+
+    /// Generate embedding for a contextualized chunk
+    pub async fn get_contextual_embedding(
+        &self,
+        contextualized_chunk: ContextualizedChunk,
+    ) -> Result<ContextualEmbedding> {
+        // Generate embedding for the contextualized text instead of the original chunk
+        let embedding = self
+            .get_embedding(&contextualized_chunk.contextualized_text)
+            .await?;
+
+        Ok(ContextualEmbedding {
+            embedding,
+            contextualized_chunk,
+        })
+    }
+
+    /// Generate embeddings for multiple contextualized chunks
+    pub async fn get_contextual_embeddings(
+        &self,
+        chunks: Vec<ContextualizedChunk>,
+    ) -> Result<Vec<ContextualEmbedding>> {
+        let mut embeddings = Vec::new();
+
+        for chunk in chunks {
+            let embedding = self.get_contextual_embedding(chunk).await?;
+            embeddings.push(embedding);
+        }
+
+        Ok(embeddings)
     }
 
     /// Generate embeddings for a text

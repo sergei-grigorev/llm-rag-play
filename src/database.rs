@@ -112,7 +112,8 @@ impl QdrantClient {
             .map(|(idx, (chunk, embedding))| {
                 let payload: HashMap<String, Value> = serde_json::from_value(json!({
                     "text": chunk.text,
-                    "file_name": file_name,
+                    "document_id": chunk.document_id,
+                    "start_position": chunk.start_position,
                     "chunk_index": idx,
                 }))
                 .unwrap();
@@ -171,11 +172,25 @@ impl QdrantClient {
             .filter_map(|scored_point| {
                 let payload = scored_point.payload;
                 let text = payload.get("text")?.as_str()?;
+                // Get document_id from payload or fallback to file_name
+                let document_id = payload
+                    .get("document_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(&file_name.to_string())
+                    .to_string();
+
+                // Get start position or default to 0
+                let start_position = payload
+                    .get("start_position")
+                    .and_then(|v| v.as_integer())
+                    .map(|v| v as usize)
+                    .unwrap_or(0);
 
                 Some(TextChunk {
                     text: text.to_string(),
                     token_count: text.split_whitespace().count(), // Estimate token count
-                    file_name: file_name.to_string(),
+                    document_id,
+                    start_position,
                 })
             })
             .collect();

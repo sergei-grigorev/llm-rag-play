@@ -1,13 +1,16 @@
 # Gemini RAG
 
-A Rust-based Retrieval-Augmented Generation (RAG) system using Gemini embeddings and Qdrant vector database.
+A high-performance Rust-based Retrieval-Augmented Generation (RAG) system leveraging Google's Gemini API for embeddings and text generation, with Qdrant vector database for efficient semantic search. The system implements advanced RAG patterns including contextual retrieval for improved accuracy and memory-optimized document handling.
 
 ## Features
 
-- Process text files into semantic chunks
+- Process text files into optimized semantic chunks with configurable overlap
 - Generate embeddings using Google's Gemini API
-- Store and retrieve chunks using Qdrant vector database
-- Answer questions based on the content of the document
+- Efficient vector storage and retrieval with Qdrant
+- Contextual retrieval for improved answer quality
+- Memory-optimized architecture with document reference handling
+- Support for vector similarity search
+- Configurable chunking and retrieval parameters
 
 ## Prerequisites
 
@@ -64,17 +67,58 @@ Available commands:
 
 ## How it Works
 
-1. The application reads the provided text file
-2. The text is split into chunks of approximately 500 tokens each
-3. Each chunk is converted to a vector embedding using Gemini
-4. Chunks and embeddings are stored in Qdrant
-5. When you ask a question, it:
-   - Converts your question to an embedding
-   - Finds the 4 most similar chunks in the document
-   - Uses Gemini to generate an answer based on these chunks
-   - Returns the answer to you
+1. **Document Processing**
+   - Input text is split into chunks of approximately 500 tokens with 50-token overlap
+   - Each chunk maintains metadata including document ID and position in the source document
+   - Memory-optimized storage avoids storing duplicate copies of source documents
+
+2. **Embedding Generation**
+   - Each chunk is enhanced with contextual information about its position and content
+   - Contextualized chunks are converted to vector embeddings using Gemini's embeddings-004 model
+   - The system stores the contextualized text along with metadata referencing the original document
+
+3. **Vector Storage**
+   - Contextualized chunks and their embeddings are stored in Qdrant with efficient indexing
+   - Each vector point contains payload with the chunk text and metadata (document ID, position)
+   - Supports cosine similarity search for semantic retrieval
+
+4. **Question Answering**
+   - User questions are converted to embeddings using the same Gemini model
+   - The system retrieves the most relevant chunks using vector similarity search
+   - Retrieved chunks are combined to form a comprehensive context
+   - Gemini generates accurate, source-grounded answers based on the retrieved context
+
+5. **Memory Optimization**
+   - TextChunk structure stores metadata (document ID, position) instead of duplicating the entire document
+   - Efficient data structures minimize memory footprint
+   - Document references enable tracking of content origin without redundant storage
 
 ## Notes
 
-- If you process the same file again, it will skip the processing and use the existing chunks in Qdrant
-- The file is identified by its name, not its content, so if you update the file, you'll need to delete the collection in Qdrant to reprocess it
+- The system uses file hashing to detect changes - reprocessing only occurs when content changes
+- Document collections are versioned to support updates without data loss
+- The context module can be extended to support domain-specific enrichment
+- For large document sets, consider adjusting chunk size and overlap for optimal performance
+
+## Recent Improvements
+
+- **Memory Optimization**: Reduced memory usage through reference-based document storage
+- **Contextual Retrieval**: Improved answer quality with contextual embeddings
+- **Context Generation**: Added automatic context generation for chunks to improve retrieval
+- **Enhanced Documentation**: Added comprehensive [architecture documentation](./architecture.md) and usage examples
+
+### Document Processing Flow
+
+1. **Document Ingestion**: The system reads the input document.
+2. **Chunking**: The document is split into chunks of ~500 tokens with 50-token overlap.
+3. **Context Generation**: Each chunk is enhanced with contextual information about its position and content within the document.
+4. **Embedding Generation**: The contextualized chunks are converted to vector embeddings using Gemini's embeddings-004 model.
+5. **Vector Storage**: The embeddings and chunks are stored in Qdrant with efficient reference handling to minimize memory usage.
+
+### Query Processing Flow
+
+1. **Query Analysis**: The user's question is processed.
+2. **Query Embedding**: The question is converted to a vector embedding using the same model.
+3. **Vector Search**: The system searches for the most semantically similar chunks in the vector database.
+4. **Chunk Retrieval**: The most relevant chunks are retrieved and combined.
+5. **Answer Generation**: The Gemini model generates an answer based on the retrieved context and the original question.

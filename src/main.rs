@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
 
     // Only process file if collection doesn't exist
     if rag_engine.collection_exists(file_name).await? {
-        println!("Using existing collection: {}", file_name);
+        info!("Using existing collection: {}", file_name);
     } else {
         // Process and index the document
         let content = chunking::read_file(&file_path).context("Failed to read file")?;

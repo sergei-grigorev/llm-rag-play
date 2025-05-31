@@ -5,9 +5,14 @@ use std::path::Path;
 /// Represents a text chunk with metadata
 #[derive(Debug, Clone)]
 pub struct TextChunk {
+    /// The actual text content of this chunk
     pub text: String,
+    /// Estimated token count for this chunk
     pub token_count: usize,
-    pub file_name: String,
+    /// Unique identifier for the document this chunk belongs to
+    pub document_id: String,
+    /// Starting position of this chunk in the original document
+    pub start_position: usize,
 }
 
 /// Read content from a text file
@@ -34,11 +39,8 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
     // Process each paragraph
     for paragraph in paragraphs {
         let paragraph = paragraph.trim();
-        // paragraph cannot be empty cause we already filtered empty paragraphs
-        if paragraph.is_empty() {
-            continue;
-        }
 
+        // Estimate token count for the paragraph
         let paragraph_token_count = estimate_token_count(paragraph);
 
         // If a single paragraph is too large, split it into sentences
@@ -65,10 +67,12 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
                     && !sentence_buffer.is_empty()
                 {
                     // Add the current buffer as a chunk
+                    let start_position = text.find(&sentence_buffer).unwrap_or(0);
                     chunks.push(TextChunk {
                         text: sentence_buffer.clone(),
                         token_count: buffer_token_count,
-                        file_name: file_name.to_string(),
+                        document_id: file_name.to_string(),
+                        start_position,
                     });
 
                     // Start a new buffer with overlap from the previous chunk
@@ -98,10 +102,12 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
 
             // Add any remaining content in the buffer
             if !sentence_buffer.is_empty() {
+                let start_position = text.find(&sentence_buffer).unwrap_or(0);
                 chunks.push(TextChunk {
-                    text: sentence_buffer,
+                    text: sentence_buffer.clone(),
                     token_count: buffer_token_count,
-                    file_name: file_name.to_string(),
+                    document_id: file_name.to_string(),
+                    start_position,
                 });
             }
         } else {
@@ -110,10 +116,12 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
                 && !current_chunk.is_empty()
             {
                 // Current chunk would exceed token limit, so finalize it
+                let start_position = text.find(&current_chunk).unwrap_or(0);
                 chunks.push(TextChunk {
                     text: current_chunk.clone(),
                     token_count: current_token_count,
-                    file_name: file_name.to_string(),
+                    document_id: file_name.to_string(),
+                    start_position,
                 });
 
                 // Start a new chunk with overlap from the previous chunk
@@ -147,10 +155,12 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
 
     // Add the last chunk if it's not empty
     if !current_chunk.trim().is_empty() {
+        let start_position = text.find(&current_chunk).unwrap_or(0);
         chunks.push(TextChunk {
             text: current_chunk,
             token_count: current_token_count,
-            file_name: file_name.to_string(),
+            document_id: file_name.to_string(),
+            start_position,
         });
     }
 
@@ -162,9 +172,15 @@ pub fn split_into_chunks(text: &str, file_name: &str) -> Vec<TextChunk> {
             let TextChunk {
                 text,
                 token_count: _,
-                file_name,
+                document_id,
+                start_position: _,
             } = chunk;
-            let mut sub_chunks = split_into_chunks(&text, &file_name);
+            // Recursively split into chunks
+            let mut sub_chunks = split_into_chunks(&text, &document_id);
+            // Ensure document_id is preserved in sub-chunks
+            for sub_chunk in &mut sub_chunks {
+                sub_chunk.document_id = document_id.clone();
+            }
             final_chunks.append(&mut sub_chunks);
         } else {
             final_chunks.push(chunk);
