@@ -67,8 +67,10 @@ Available commands:
 - `QDRANT_URL`: URL of your Qdrant instance
 - `QDRANT_API_KEY`: API key for Qdrant (if required)
 - `GEMINI_API_KEY`: Your Gemini API key
-- `GEMINI_EMBEDDINGS_URL`: URL for Gemini embeddings API (optional)
-- `GEMINI_GENERATE_URL`: URL for Gemini generation API (optional)
+- `GEMINI_BASE_URL`: Base URL for Gemini API (defaults to https://generativelanguage.googleapis.com/v1beta)
+- `EMBEDDING_MODEL`: Model for embeddings (defaults to models/text-embedding-004)
+- `GENERATE_MODEL`: Model for text generation (defaults to models/gemini-2.5-flash-preview-05-20)
+- `CONTEXTUALIZE_MODEL`: Model for context generation (defaults to models/gemini-2.0-flash-lite)
 - `RUST_LOG`: Logging level (error, warn, info, debug, trace)
 
 ## How it Works

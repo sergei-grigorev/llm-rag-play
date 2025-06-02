@@ -6,27 +6,32 @@ use std::env;
 #[derive(Clone)]
 pub struct GeminiConfig {
     pub api_key: String,
-    pub embeddings_url: String,
-    pub generate_url: String,
-    pub contextualize_url: String,
+    pub base_url: String,
+    pub embedding_model: String,
+    pub generate_model: String,
+    pub contextualize_model: String,
 }
 
 impl GeminiConfig {
     /// Create a new configuration from environment variables
     pub fn from_env() -> Result<Self> {
         let api_key = env::var("GEMINI_API_KEY")?;
-        // Default URLs if not specified
-        let embeddings_url =
-            env::var("GEMINI_EMBEDDINGS_URL").expect("GEMINI_EMBEDDINGS_URL not set");
-        let generate_url = env::var("GEMINI_GENERATE_URL").expect("GEMINI_GENERATE_URL not set");
-        let contextualize_url =
-            env::var("GEMINI_CONTEXTUALIZE_URL").expect("GEMINI_CONTEXTUALIZE_URL not set");
+        let base_url = env::var("GEMINI_BASE_URL").expect("GEMINI_BASE_URL not set");
+        
+        // Default models if not specified
+        let embedding_model = env::var("EMBEDDING_MODEL")
+            .unwrap_or_else(|_| "models/text-embedding-004".to_string());
+        let generate_model = env::var("GENERATE_MODEL")
+            .unwrap_or_else(|_| "models/gemini-2.5-flash-preview-05-20".to_string());
+        let contextualize_model = env::var("CONTEXTUALIZE_MODEL")
+            .unwrap_or_else(|_| "models/gemini-2.0-flash-lite".to_string());
 
         Ok(GeminiConfig {
             api_key,
-            embeddings_url,
-            generate_url,
-            contextualize_url,
+            base_url,
+            embedding_model,
+            generate_model,
+            contextualize_model,
         })
     }
 }
@@ -59,18 +64,21 @@ impl GeminiClient {
 
         #[derive(Serialize)]
         struct EmbeddingRequest<'a> {
-            model: &'static str,
+            model: &'a str,
             content: EmbeddingContent<'a>,
         }
 
         let request = EmbeddingRequest {
-            model: "models/embedding-004",
+            model: &self.config.embedding_model,
             content: EmbeddingContent {
                 parts: vec![Part { text }],
             },
         };
 
-        let url = format!("{}?key={}", self.config.embeddings_url, self.config.api_key);
+        let url = format!("{}/{}:embedContent?key={}", 
+            self.config.base_url, 
+            self.config.embedding_model,
+            self.config.api_key);
 
         let response = self.client.post(&url).json(&request).send().await?;
 
@@ -98,7 +106,7 @@ impl GeminiClient {
     pub async fn generate_text(
         &self,
         prompt: &str,
-        model: &'static str,
+        model: &str,
         temperature: f32,
         top_p: f32,
         top_k: i32,
@@ -115,8 +123,10 @@ impl GeminiClient {
             },
         };
 
-        // todo: replace here with dynamic URL selection based on model
-        let url = format!("{}?key={}", self.config.generate_url, self.config.api_key);
+        let url = format!("{}/{}:generateContent?key={}", 
+            self.config.base_url, 
+            model, // Use the model parameter
+            self.config.api_key);
 
         let response = self.client.post(&url).json(&request).send().await?;
 
@@ -147,7 +157,7 @@ impl GeminiClient {
 
         self.generate_text(
             &prompt,
-            "models/gemini-2.5-flash-preview-05-20",
+            &self.config.generate_model,
             0.2,
             0.8,
             40,
@@ -160,7 +170,7 @@ impl GeminiClient {
     pub async fn generate_context(&self, prompt: &str) -> Result<String> {
         self.generate_text(
             prompt,
-            "models/gemini-2.0-flash-lite",
+            &self.config.contextualize_model,
             0.2,
             0.8,
             40,
@@ -192,7 +202,7 @@ struct EmbeddingData {
 
 #[derive(Serialize)]
 struct GenerateRequest<'a> {
-    model: &'static str,
+    model: &'a str,
     contents: Vec<Content<'a>>,
     generation_config: GenerationConfig,
 }

@@ -68,6 +68,8 @@ Handles interaction with the Gemini API for generating embeddings and text:
 
 - **GeminiClient**:
   - Manages API authentication and requests
+  - Uses a unified configuration with base URL and model parameters
+  - Dynamically constructs API endpoints based on the selected models
   - Provides methods for generating embeddings and text responses
 
 - **Embedding Generation**:
